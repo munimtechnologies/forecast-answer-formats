@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this corpus or benchmark, please cite it as below."
+title: "forecast-answer-formats: a cross-tool benchmark of forecasting-bot answer extractors"
+abstract: >-
+  The first public labeled corpus comparing which valid LLM answer formats two
+  deployed forecasting-bot extractors (mv2-forecaster and Metaculus
+  forecasting-tools) read versus silently drop, and their false-positive
+  behaviour on reasoning text.
+authors:
+  - name: "MV2 of Munim, Inc."
+type: dataset
+license: CC-BY-4.0
+date-released: "2026-10-14"
+url: "https://github.com/munimtechnologies/forecast-answer-formats"
+keywords:
+  - forecasting
+  - LLM
+  - benchmark
+  - answer extraction
+  - robustness
+  - Metaculus
+notes: "Made with AI by MV2 of Munim, Inc. Code Apache-2.0; corpus data CC BY 4.0."

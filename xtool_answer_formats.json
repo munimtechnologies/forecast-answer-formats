@@ -1,0 +1,65 @@
+{
+  "name": "forecast-answer-formats-xtool",
+  "version": "0.1.0",
+  "description": "A labeled corpus of realistic LLM structured-answer formats for forecasting bots, run through two deployed extractors (mv2-forecaster and Metaculus forecasting-tools) to map which valid formats each reads versus silently drops, and each extractor's false-positive behaviour on reasoning text. First-of-its-kind cross-tool answer-format robustness benchmark.",
+  "made_with": "AI, by MV2 of Munim, Inc. (research field)",
+  "license": "CC BY 4.0",
+  "generated": "2026-10-14",
+  "extractors": {
+    "mv2_forecaster": {
+      "version": "0.1.7",
+      "source": "https://github.com/munimtechnologies/mv2-forecaster/blob/main/mv2_forecaster.py",
+      "binary_regex": "Probability[\\s*_~`]*:[\\s*_~`]*(\\d+(?:\\.\\d+)?)\\s*(%?)  (re.I)",
+      "binary_rule": "Requires the literal label 'Probability' + colon (markdown/emphasis tolerant, case-insensitive). Takes the last match; divides by 100 when a % is present OR the value is > 1; keeps the result only if it falls in [0, 1]."
+    },
+    "forecasting_tools": {
+      "source": "https://github.com/Metaculus/forecasting-tools/blob/main/forecasting_tools/helpers/prediction_extractor.py",
+      "method": "PredictionExtractor.extract_last_percentage_value(text, min_prediction=0, max_prediction=1)",
+      "binary_regex": "(\\d+(?:\\.\\d+)?)\\s*%",
+      "binary_rule": "Ignores the label entirely; takes the last %-value anywhere in the text; divides by 100; raises (treated here as a DROP) when no % is found or the value is outside [0, 1] before clamping to [min, max]."
+    }
+  },
+  "classes": {
+    "correct": "read a value equal to the ground-truth probability",
+    "miss": "dropped a legitimate final forecast (returned None)",
+    "wrong_value": "read a value, but not the ground-truth one",
+    "false_positive": "read a probability from text that has no legitimate final forecast (worse than a drop: injects a spurious forecast)",
+    "correct_reject": "correctly returned nothing when there was no legitimate final forecast"
+  },
+  "binary_tally": {
+    "mv2_forecaster": {"correct": 14, "miss": 2, "false_positive": 0, "correct_reject": 4},
+    "forecasting_tools": {"correct": 13, "miss": 3, "false_positive": 2, "correct_reject": 2}
+  },
+  "binary": [
+    {"id": "bin_canonical",     "family": "canonical",            "text": "Probability: 73%",            "true_prob": 0.73,  "mv2_value": 0.73,  "mv2_class": "correct",        "ft_value": 0.73,  "ft_class": "correct"},
+    {"id": "bin_decimal_pct",   "family": "decimal percent",      "text": "Probability: 73.5%",          "true_prob": 0.735, "mv2_value": 0.735, "mv2_class": "correct",        "ft_value": 0.735, "ft_class": "correct"},
+    {"id": "bin_dropped_pct",   "family": "dropped % sign",       "text": "Probability: 73",             "true_prob": 0.73,  "mv2_value": 0.73,  "mv2_class": "correct",        "ft_value": null,  "ft_class": "miss"},
+    {"id": "bin_bare_fraction", "family": "bare fraction",        "text": "Probability: 0.73",           "true_prob": 0.73,  "mv2_value": 0.73,  "mv2_class": "correct",        "ft_value": null,  "ft_class": "miss"},
+    {"id": "bin_no_space",      "family": "no space",             "text": "Probability:73%",             "true_prob": 0.73,  "mv2_value": 0.73,  "mv2_class": "correct",        "ft_value": 0.73,  "ft_class": "correct"},
+    {"id": "bin_line_bold",     "family": "whole line bold",      "text": "**Probability: 73%**",        "true_prob": 0.73,  "mv2_value": 0.73,  "mv2_class": "correct",        "ft_value": 0.73,  "ft_class": "correct"},
+    {"id": "bin_bold_colon_in", "family": "bold, colon inside",   "text": "**Probability:** 73%",        "true_prob": 0.73,  "mv2_value": 0.73,  "mv2_class": "correct",        "ft_value": 0.73,  "ft_class": "correct"},
+    {"id": "bin_bold_number",   "family": "number bolded",        "text": "Probability: **73%**",        "true_prob": 0.73,  "mv2_value": 0.73,  "mv2_class": "correct",        "ft_value": 0.73,  "ft_class": "correct"},
+    {"id": "bin_italic",        "family": "italic",               "text": "*Probability:* 73%",          "true_prob": 0.73,  "mv2_value": 0.73,  "mv2_class": "correct",        "ft_value": 0.73,  "ft_class": "correct"},
+    {"id": "bin_lowercase",     "family": "lowercase",            "text": "probability: 73%",            "true_prob": 0.73,  "mv2_value": 0.73,  "mv2_class": "correct",        "ft_value": 0.73,  "ft_class": "correct"},
+    {"id": "bin_numbered",      "family": "numbered line",        "text": "1. Probability: 73%",         "true_prob": 0.73,  "mv2_value": 0.73,  "mv2_class": "correct",        "ft_value": 0.73,  "ft_class": "correct"},
+    {"id": "bin_boundary_0",    "family": "boundary 0%",          "text": "Probability: 0%",             "true_prob": 0.0,   "mv2_value": 0.0,   "mv2_class": "correct",        "ft_value": 0.0,   "ft_class": "correct"},
+    {"id": "bin_boundary_100",  "family": "boundary 100 (no %)",  "text": "Probability: 100",            "true_prob": 1.0,   "mv2_value": 1.0,   "mv2_class": "correct",        "ft_value": null,  "ft_class": "miss"},
+    {"id": "bin_equals",        "family": "equals separator",     "text": "Probability = 73%",           "true_prob": 0.73,  "mv2_value": null,  "mv2_class": "miss",           "ft_value": 0.73,  "ft_class": "correct"},
+    {"id": "bin_prose_is",      "family": "prose 'is'",           "text": "My probability is 73%.",      "true_prob": 0.73,  "mv2_value": null,  "mv2_class": "miss",           "ft_value": 0.73,  "ft_class": "correct"},
+    {"id": "bin_baserate_then", "family": "base rate then final", "text": "The base rate is 5%.\nProbability: 80%", "true_prob": 0.80, "mv2_value": 0.80, "mv2_class": "correct", "ft_value": 0.80, "ft_class": "correct"},
+    {"id": "bin_baserate_only", "family": "base rate only (trap)","text": "Historically about a 5% base rate, nothing else.", "true_prob": null, "mv2_value": null, "mv2_class": "correct_reject", "ft_value": 0.05, "ft_class": "false_positive"},
+    {"id": "bin_two_prose_pcts","family": "two prose %s (trap)",  "text": "There is a 20% chance of rain and a 30% chance of snow.", "true_prob": null, "mv2_value": null, "mv2_class": "correct_reject", "ft_value": 0.30, "ft_class": "false_positive"},
+    {"id": "bin_out_of_range",  "family": "out of range",         "text": "Probability: 173",            "true_prob": null,  "mv2_value": null,  "mv2_class": "correct_reject", "ft_value": null,  "ft_class": "correct_reject"},
+    {"id": "bin_no_number",     "family": "no number at all",     "text": "I am fairly confident it happens.", "true_prob": null, "mv2_value": null, "mv2_class": "correct_reject", "ft_value": null, "ft_class": "correct_reject"}
+  ],
+  "multiple_choice_note": "mv2-only. The live mv2 parse_multiple_choice behaviour below was confirmed in sealed-container runs (compete jobs forecaster-mc-fix-v1 and forecaster-parser-audit-v1). The forecasting-tools MC API needs a question object and is left as future cross-tool work.",
+  "multiple_choice": [
+    {"id": "mc_canonical",     "family": "canonical",          "text": "Option A: 30%\nOption B: 70%",       "options": ["Option A", "Option B"], "intended_readable": true,  "mv2_read": true},
+    {"id": "mc_numbered_dot",  "family": "numbered '1.'",      "text": "1. Option A: 30%\n2. Option B: 70%", "options": ["Option A", "Option B"], "intended_readable": true,  "mv2_read": true},
+    {"id": "mc_bold_colon_in", "family": "bold, colon inside", "text": "**Option A:** 30%\n**Option B:** 70%","options": ["Option A", "Option B"], "intended_readable": true,  "mv2_read": true},
+    {"id": "mc_dash_bullet",   "family": "dash bullet",        "text": "- Option A: 30%\n- Option B: 70%",   "options": ["Option A", "Option B"], "intended_readable": true,  "mv2_read": true},
+    {"id": "mc_no_percent",    "family": "no percent sign",    "text": "Option A: 30\nOption B: 70",         "options": ["Option A", "Option B"], "intended_readable": true,  "mv2_read": true},
+    {"id": "mc_equals",        "family": "equals separator",   "text": "Option A = 30%\nOption B = 70%",     "options": ["Option A", "Option B"], "intended_readable": false, "mv2_read": false},
+    {"id": "mc_parenthetical", "family": "parenthetical",      "text": "Option A (30%)\nOption B (70%)",     "options": ["Option A", "Option B"], "intended_readable": false, "mv2_read": false}
+  ]
+}
