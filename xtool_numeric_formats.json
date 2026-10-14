@@ -1,0 +1,84 @@
+{
+  "dataset": "forecast-answer-formats — numeric (percentile) cross-tool leg",
+  "version": "0.2.0",
+  "license": "CC BY 4.0",
+  "by": "MV2 of Munim, Inc. (made with AI)",
+  "question_type": "numeric / percentile distribution",
+  "description": "A labeled corpus of realistic LLM percentile answer blocks, each with the distribution a forecasting harness should extract (or null when the model gave no valid final answer). For each case we record whether two deployed forecasting-bot numeric extractors read, miss, or wrongly accept it. Extractors are transcribed from each tool's published source in numeric_extractors.py and checked offline by test_numeric_formats.py; the live packages are exercised unmodified by compare_extractors.py.",
+  "tools": {
+    "mv2_forecaster": "parse_percentiles (v0.1.7). Matches 'Percentile N:' word order only, tolerant of markdown emphasis and an optional '$', keeps indices strictly between 0 and 100, strips thousands commas, allows negatives/scientific notation; returns the {index: value} map only if >= 3 valid percentiles are found, else None.",
+    "forecasting_tools": "Metaculus forecasting_tools numeric text extractor. A line filter accepts both 'Percentile N' and 'Nth percentile' word orders but is anchored at the line start (a leading '**' or other non-space prefix drops the line); the first number on a line is the level (divided by 100), the second is the value; thousands commas, currency symbols and negatives are handled. Distribution-count validation lives downstream in the library, not in the text extractor, so it is not modeled here."
+  },
+  "label_vocabulary": ["correct", "miss", "false_positive", "correct_reject", "wrong_value"],
+  "expected_tallies": {
+    "mv2_forecaster": {"correct": 5, "miss": 2, "false_positive": 0, "correct_reject": 1},
+    "forecasting_tools": {"correct": 5, "miss": 1, "false_positive": 1, "correct_reject": 0}
+  },
+  "headline": "Neither extractor dominates on numeric answers. mv2-forecaster reads markdown-emphasized percentile blocks and never invents a distribution from reasoning text (0 false positives), but drops the common 'Nth percentile:' word order and anything under 3 points. forecasting-tools reads the 'Nth percentile:' word order, but drops markdown-emphasized blocks and turns a line-anchored base-rate percentile block into a spurious forecast.",
+  "cases": [
+    {
+      "id": "canonical_label",
+      "family": "canonical",
+      "text": "Percentile 10: 100\nPercentile 50: 250\nPercentile 90: 500",
+      "intended": {"10": 100, "50": 250, "90": 500},
+      "expected": {"mv2_forecaster": "correct", "forecasting_tools": "correct"},
+      "note": "The canonical 'Percentile N:' block both tools agree on."
+    },
+    {
+      "id": "ordinal_wordorder",
+      "family": "word_order",
+      "text": "10th percentile: 100\n50th percentile: 250\n90th percentile: 500",
+      "intended": {"10": 100, "50": 250, "90": 500},
+      "expected": {"mv2_forecaster": "miss", "forecasting_tools": "correct"},
+      "note": "A very common way models write percentiles. forecasting-tools' filter accepts the 'Nth percentile' word order; mv2 requires the literal 'Percentile' before the number, so it silently drops the whole block."
+    },
+    {
+      "id": "markdown_bold_lines",
+      "family": "emphasis",
+      "text": "**Percentile 10:** 250\n**Percentile 50:** 500\n**Percentile 90:** 1000",
+      "intended": {"10": 250, "50": 500, "90": 1000},
+      "expected": {"mv2_forecaster": "correct", "forecasting_tools": "miss"},
+      "note": "Mirror of the ordinal case. mv2's padding class absorbs the '**'; forecasting-tools anchors each line at '^\\s*(Percentile|digit)', so a leading '**' drops the line."
+    },
+    {
+      "id": "comma_grouped_values",
+      "family": "number_format",
+      "text": "Percentile 10: 1,000\nPercentile 50: 12,500\nPercentile 90: 125,000",
+      "intended": {"10": 1000, "50": 12500, "90": 125000},
+      "expected": {"mv2_forecaster": "correct", "forecasting_tools": "correct"},
+      "note": "Shared strength: both strip thousands separators."
+    },
+    {
+      "id": "negative_and_zero_values",
+      "family": "number_format",
+      "text": "Percentile 10: -50\nPercentile 50: 0\nPercentile 90: 125",
+      "intended": {"10": -50, "50": 0, "90": 125},
+      "expected": {"mv2_forecaster": "correct", "forecasting_tools": "correct"},
+      "note": "Shared strength: both read signed values and zero (relevant for temperature, net-change, P&L style questions)."
+    },
+    {
+      "id": "currency_prefixed_values",
+      "family": "number_format",
+      "text": "Percentile 10: $100\nPercentile 50: $250\nPercentile 90: $500",
+      "intended": {"10": 100, "50": 250, "90": 500},
+      "expected": {"mv2_forecaster": "correct", "forecasting_tools": "correct"},
+      "note": "Shared strength: mv2 has an optional '$'; forecasting-tools' number regex skips a leading currency symbol."
+    },
+    {
+      "id": "two_percentiles_only",
+      "family": "count",
+      "text": "Percentile 25: 100\nPercentile 75: 300",
+      "intended": {"25": 100, "75": 300},
+      "expected": {"mv2_forecaster": "miss", "forecasting_tools": null},
+      "note": "mv2 requires >= 3 percentiles, so a 2-point answer is dropped. forecasting-tools' text extractor has no such gate (distribution-count checks happen downstream in the library), so its behavior on <3 points is not asserted in this leg."
+    },
+    {
+      "id": "base_rate_block_then_declines",
+      "family": "false_positive_trap",
+      "text": "Looking at base rates for this kind of event:\n10th percentile: 2\n50th percentile: 5\n90th percentile: 11\nThese are last year's figures; I can't give calibrated percentiles for this year.",
+      "intended": null,
+      "expected": {"mv2_forecaster": "correct_reject", "forecasting_tools": "false_positive"},
+      "note": "The model shows a line-anchored historical percentile block, then explicitly declines. forecasting-tools reads the base-rate block as the forecast (false positive); mv2 rejects it because the lines use the 'Nth percentile' word order it does not match. A designed probe, not a frequency estimate."
+    }
+  ]
+}
