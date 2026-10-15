@@ -83,9 +83,14 @@ realistic non-dominant pool.
 | **Combined** | `combined_cost.py`, `combined_cost.md` | Drops and misreads together act as one effective drop rate `d + m*(1+rho)`; `from_corpus_tally()` maps a tool's measured tally straight to a prize factor. |
 | **Misread (numeric)** | `numeric_misread_cost.py`, `numeric_misread_cost.md` | A numeric misread's penalty is *not* free — for a Gaussian forecast it is `0.5*z**2` nats for a displacement of `z` standard deviations, so it costs `z**2/(2*mu)` drops. A misread beats a drop only below the break-even displacement `z* = sqrt(2*mu)` ≈ 0.2–0.45 σ for realistic edges; a unit/magnitude error ("2 million" read as "2.0") is catastrophic. |
 
-The two misread legs share one law: a misread costs `k = (log-score loss relative
-to a correct read) / mu` effective drops — `k = 1 + rho` for a binary misread,
-`k = z**2/(2*mu)` for a numeric one.
+The drop and both misread legs share one law: an extractor error that loses
+`L_err` nats of log score relative to a correct read costs `k = L_err / mu`
+*effective dropped answers* — `k = 1` for a drop, `k = 1 + rho` for a binary
+misread, `k = z**2/(2*mu)` for a numeric one — and a set of error channels at
+rates `r_i` multiplies the expected prize by `(max(0, 1 - sum_i r_i*k_i))**2`.
+This unification is derived in **[`PREPRINT.md`](PREPRINT.md)** and implemented in
+`unify_cost.py`, whose test proves it reproduces each of the three shipped cost
+models exactly.
 
 ## Files
 
@@ -103,6 +108,8 @@ to a correct read) / mu` effective drops — `k = 1 + rho` for a binary misread,
 | `compare_extractors.py` | runs the live packages unmodified |
 | `fetch_live.py` | fetches live question objects (optional) |
 | `drop_cost.py` / `misread_cost.py` / `combined_cost.py` / `numeric_misread_cost.py` | tournament cost models (with `test_*` and `*.md`) |
+| `unify_cost.py` | the single law `k = L_err/mu` the four cost models share (with `test_unify_cost.py`) |
+| `PREPRINT.md` | short write-up deriving the unified cost law |
 | `xtool_robustness.md` / `xtool_mc.md` / `xtool_numeric.md` | per-leg write-ups |
 
 ## Reproduce
