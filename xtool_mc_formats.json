@@ -1,0 +1,119 @@
+{
+  "name": "forecast-answer-formats: multiple-choice cross-tool leg",
+  "version": "0.3.0",
+  "description": "A labeled corpus of realistic LLM multiple-choice answer formats, each with its intended per-option distribution, scored against two deployed forecasting-bot extractors (mv2-forecaster 0.1.7 and Metaculus forecasting-tools) to measure which valid formats each reads, silently drops, or misreads as a spurious forecast. Designed probe, not a frequency estimate from live logs.",
+  "license": "CC-BY-4.0",
+  "generated": "2026-10-14",
+  "made_with": "AI, by MV2 of Munim, Inc.",
+  "options": ["Option A", "Option B"],
+  "intended_distribution": {"Option A": 0.30, "Option B": 0.70},
+  "extractors": {
+    "mv2_forecaster": {
+      "version": "0.1.7",
+      "source": "parse_multiple_choice in mv2_forecaster.py",
+      "rule": "per option, line-anchored; tolerates leading whitespace, emphasis (* _ ~ `), '>' quote, '-', bullet, and an optional numbered marker; REQUIRES a literal ':' separator; '%' optional; all options must match or the whole run is dropped.",
+      "status": "source-grounded transcription; MC behaviour also confirmed by real sandbox runs (compete: forecaster-mc-fix-v1, forecaster-parser-audit-v1)"
+    },
+    "forecasting_tools": {
+      "source": "prediction_extractor._extract_option_probabilities_through_name_matching in forecasting-tools (Metaculus, separate project)",
+      "rule": "per option, line-anchored on each stripped+lowercased line; tolerates leading non-word chars (emphasis/bullets); delimiter is ':' OR table-pipe '|'; no non-space chars allowed between the delimiter and the number; cannot cross a leading digit (numbered lists); exactly one matching line per option required or the run is dropped; infers decimal vs percentage then renormalises.",
+      "status": "source-grounded transcription; pending independent live-package confirmation (compete: mc-xtool-verify)"
+    }
+  },
+  "classes": {
+    "correct": "returns all options within tolerance of the intended distribution",
+    "miss": "returns nothing for an answer that was actually present (silent drop)",
+    "wrong_value": "returns a distribution that differs from the intended one",
+    "false_positive": "returns a distribution when no forecast was intended",
+    "correct_reject": "returns nothing when no forecast was intended"
+  },
+  "mc_tally": {
+    "mv2_forecaster": {"correct": 7, "miss": 3, "wrong_value": 0, "false_positive": 0, "correct_reject": 1},
+    "forecasting_tools": {"correct": 6, "miss": 4, "wrong_value": 0, "false_positive": 1, "correct_reject": 0}
+  },
+  "multiple_choice": [
+    {
+      "id": "canonical",
+      "family": "canonical colon",
+      "text": "Option A: 30%\nOption B: 70%",
+      "expected": {"Option A": 0.30, "Option B": 0.70},
+      "labels": {"mv2_forecaster": "correct", "forecasting_tools": "correct"}
+    },
+    {
+      "id": "no_percent",
+      "family": "dropped % sign",
+      "text": "Option A: 30\nOption B: 70",
+      "expected": {"Option A": 0.30, "Option B": 0.70},
+      "labels": {"mv2_forecaster": "correct", "forecasting_tools": "correct"}
+    },
+    {
+      "id": "decimal",
+      "family": "decimal fractions",
+      "text": "Option A: 0.30\nOption B: 0.70",
+      "expected": {"Option A": 0.30, "Option B": 0.70},
+      "labels": {"mv2_forecaster": "correct", "forecasting_tools": "correct"}
+    },
+    {
+      "id": "dash_bullet",
+      "family": "dash bullet list",
+      "text": "- Option A: 30%\n- Option B: 70%",
+      "expected": {"Option A": 0.30, "Option B": 0.70},
+      "labels": {"mv2_forecaster": "correct", "forecasting_tools": "correct"}
+    },
+    {
+      "id": "bold_label",
+      "family": "bold option name",
+      "text": "**Option A**: 30%\n**Option B**: 70%",
+      "expected": {"Option A": 0.30, "Option B": 0.70},
+      "labels": {"mv2_forecaster": "correct", "forecasting_tools": "correct"}
+    },
+    {
+      "id": "bold_colon_inside",
+      "family": "bold with colon inside markers",
+      "text": "**Option A:** 30%\n**Option B:** 70%",
+      "expected": {"Option A": 0.30, "Option B": 0.70},
+      "labels": {"mv2_forecaster": "correct", "forecasting_tools": "miss"},
+      "note": "CONTRAST: mv2 pads the emphasis around the colon and reads it; forecasting-tools allows no non-space chars between the delimiter and the number, so '**' after the colon drops the whole run."
+    },
+    {
+      "id": "numbered",
+      "family": "numbered list",
+      "text": "1. Option A: 30%\n2. Option B: 70%",
+      "expected": {"Option A": 0.30, "Option B": 0.70},
+      "labels": {"mv2_forecaster": "correct", "forecasting_tools": "miss"},
+      "note": "CONTRAST: mv2 has an explicit numbered-list prefix; forecasting-tools' leading \\W* cannot cross the digit '1', so no option matches and the run is dropped."
+    },
+    {
+      "id": "pipe_table",
+      "family": "markdown table / pipe delimiter",
+      "text": "Option A | 30\nOption B | 70",
+      "expected": {"Option A": 0.30, "Option B": 0.70},
+      "labels": {"mv2_forecaster": "miss", "forecasting_tools": "correct"},
+      "note": "CONTRAST (opposite direction): forecasting-tools accepts the table-pipe delimiter; mv2 requires a literal ':' so it drops the run."
+    },
+    {
+      "id": "equals_separator",
+      "family": "equals separator",
+      "text": "Option A = 30%\nOption B = 70%",
+      "expected": {"Option A": 0.30, "Option B": 0.70},
+      "labels": {"mv2_forecaster": "miss", "forecasting_tools": "miss"},
+      "note": "Shared drop: neither accepts '=' as a separator."
+    },
+    {
+      "id": "parenthetical",
+      "family": "parenthetical percent",
+      "text": "Option A (30%)\nOption B (70%)",
+      "expected": {"Option A": 0.30, "Option B": 0.70},
+      "labels": {"mv2_forecaster": "miss", "forecasting_tools": "miss"},
+      "note": "Shared drop: no ':' or '|' delimiter before the number."
+    },
+    {
+      "id": "base_rate_table_trap",
+      "family": "reference-table false-positive trap",
+      "text": "For reference, here are last year's frequencies, which are NOT my forecast:\nOption A | 12\nOption B | 88\nI don't have enough information to forecast this question.",
+      "expected": null,
+      "labels": {"mv2_forecaster": "correct_reject", "forecasting_tools": "false_positive"},
+      "note": "FP TRAP: forecasting-tools' pipe support reads the reference frequency table as a forecast (12/88); mv2 requires a ':' so it correctly returns nothing. Mirror of the binary base-rate false positive, but driven by table syntax rather than last-%-wins."
+    }
+  ]
+}
