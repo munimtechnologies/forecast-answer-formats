@@ -3,7 +3,8 @@
 **The first public cross-tool benchmark of which valid LLM answer formats a
 *deployed* forecasting-bot extractor reads, silently drops, or misreads as a
 spurious forecast — across all three Metaculus question types: binary,
-multiple-choice, and numeric (percentile).**
+multiple-choice, and numeric (percentile) — plus tested models of what a drop and
+a misread each cost in the tournament prize.**
 
 A forecasting bot's score depends not only on how well its model reasons, but on
 whether the bot's *extractor* can read the model's final answer out of free-form
@@ -66,6 +67,26 @@ fewer-than-three-percentile case; mv2 requires at least three.)
 **Across all three types, neither extractor dominates — they fail on different
 families.**
 
+## What a drop or a misread costs in the tournament
+
+The corpora above show *which* formats each tool drops or misreads. A family of
+small, test-gated, pure-standard-library models prices *what that costs* under the
+Metaculus tournament rule — Total Score `S` = sum of per-question peer scores
+(an unforecast question is 0); prize share ∝ `max(S, 0)**2`; prizes under $50 not
+paid. Each is derived and checked by an offline test plus a Monte Carlo over a
+realistic non-dominant pool.
+
+| model | file | result |
+|---|---|---|
+| **Drop** | `drop_cost.py`, `drop_cost.md` | A silent-drop rate `d` scales Total Score by `(1-d)`, so the prize by `(1-d)**2` — about twice the raw rate. |
+| **Misread (binary)** | `misread_cost.py`, `misread_cost.md` | A misread posts a *confident wrong* forecast (negative peer `-L`); with `rho = L/mu` it costs `(1+rho)` drops, prize factor `(max(0, 1 - m*(1+rho)))**2`, and zeros the entry once `m > 1/(1+rho)`. |
+| **Combined** | `combined_cost.py`, `combined_cost.md` | Drops and misreads together act as one effective drop rate `d + m*(1+rho)`; `from_corpus_tally()` maps a tool's measured tally straight to a prize factor. |
+| **Misread (numeric)** | `numeric_misread_cost.py`, `numeric_misread_cost.md` | A numeric misread's penalty is *not* free — for a Gaussian forecast it is `0.5*z**2` nats for a displacement of `z` standard deviations, so it costs `z**2/(2*mu)` drops. A misread beats a drop only below the break-even displacement `z* = sqrt(2*mu)` ≈ 0.2–0.45 σ for realistic edges; a unit/magnitude error ("2 million" read as "2.0") is catastrophic. |
+
+The two misread legs share one law: a misread costs `k = (log-score loss relative
+to a correct read) / mu` effective drops — `k = 1 + rho` for a binary misread,
+`k = z**2/(2*mu)` for a numeric one.
+
 ## Files
 
 | file | what it is |
@@ -81,19 +102,21 @@ families.**
 | `test_numeric_formats.py` | offline recompute of the numeric leg |
 | `compare_extractors.py` | runs the live packages unmodified |
 | `fetch_live.py` | fetches live question objects (optional) |
+| `drop_cost.py` / `misread_cost.py` / `combined_cost.py` / `numeric_misread_cost.py` | tournament cost models (with `test_*` and `*.md`) |
 | `xtool_robustness.md` / `xtool_mc.md` / `xtool_numeric.md` | per-leg write-ups |
 
 ## Reproduce
 
 ```bash
-python -m unittest -v        # recompute all three legs offline
+python -m unittest -v        # recompute every leg and cost model offline
 ```
 
 Each `test_*.py` recomputes every case from faithful transcriptions of each
 tool's published source (`*_extractors.py`) and asserts the per-case class and
 the published tally, so a passing suite proves the corpus labels are internally
-consistent with the sources. `compare_extractors.py` exercises the live packages
-unmodified for independent confirmation.
+consistent with the sources. The cost-model tests check each analytic law against
+a Monte Carlo. `compare_extractors.py` exercises the live packages unmodified for
+independent confirmation.
 
 ## Scope and honesty
 
@@ -104,6 +127,8 @@ unmodified for independent confirmation.
 - The forecasting-tools columns are **source-grounded reproductions**; mv2's
   behaviour is additionally confirmed by real sandbox runs. An independent live
   run of forecasting-tools against the MC corpus is queued.
+- The cost models price scenarios (`d`, `m`, `rho`, `z` are inputs, not measured
+  frequencies) and assume a non-dominant entrant; each states its limits.
 
 Corpus data is **CC BY 4.0**; code is **Apache-2.0**. `forecasting-tools` is a
 separate Metaculus project, used unmodified, with full credit to its authors.

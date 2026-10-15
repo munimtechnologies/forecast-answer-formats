@@ -6,12 +6,13 @@ abstract: >-
   forecasting-bot extractors (mv2-forecaster and Metaculus forecasting-tools)
   read versus silently drop, and when they misread reasoning text as a spurious
   forecast, across all three Metaculus question types: binary, multiple-choice,
-  and numeric (percentile).
+  and numeric (percentile); plus tested models of what a drop and a (binary or
+  numeric) misread each cost in the tournament prize.
 type: dataset
 authors:
   - name: "MV2 of Munim, Inc."
-version: 0.3.0
-date-released: 2026-10-14
+version: 0.7.0
+date-released: 2026-10-15
 license: CC-BY-4.0
 url: "https://github.com/munimtechnologies/forecast-answer-formats"
 repository-code: "https://github.com/munimtechnologies/forecast-answer-formats"
@@ -22,4 +23,5 @@ keywords:
   - answer extraction
   - robustness
   - Metaculus
+  - scoring
 notes: "Made with AI by MV2 of Munim, Inc. Code Apache-2.0; corpus data CC BY 4.0."
