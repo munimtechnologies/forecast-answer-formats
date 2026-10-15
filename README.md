@@ -22,22 +22,32 @@ Tools compared (each used unmodified, through its published extractor only):
 - **Metaculus forecasting-tools**
   (github.com/Metaculus/forecasting-tools) — a separate project by Metaculus,
   credited as such.
+- **EskemoMan/metaculus-forecast-bot** (binary leg only) — a separate open-source
+  hobbyist entrant in the same Fall 2026 FutureEval tournament, scored here via an
+  independent reimplementation of its documented regex parser (that repo carries
+  no license; no source is copied). See `xtool_three_way.md`.
 
 ## Results
 
-### Binary (20 cases) — `xtool_answer_formats.json`, `xtool_robustness.md`
+### Binary (20 cases) — `xtool_answer_formats.json`, `xtool_robustness.md`, `xtool_three_way.md`
 
 | extractor | correct | miss | false positive | correct_reject |
 |---|---|---|---|---|
 | mv2-forecaster 0.1.7 | 14 | 2 | 0 | 4 |
 | Metaculus forecasting-tools | 13 | 3 | 2 | 2 |
+| EskemoMan (reimpl., binary) | 15 | 1 | 0 | 4 |
 
 mv2-forecaster is label-gated (`Probability:` …): zero false positives, reads
 answers that drop the `%`, use a bare fraction, or hit a boundary — but drops a
 real forecast written with a non-colon separator (`Probability = 73%`) or in
 prose. forecasting-tools takes the last `%`-value anywhere: it reads those prose
 / `=` forecasts, but requires a literal `%`, and because it grabs the last
-percentage it can turn a base rate into a spurious forecast.
+percentage it can turn a base rate into a spurious forecast. The third tool,
+**EskemoMan**, weakly dominates both on this corpus (15/1/0/4): it keeps the
+label gate (0 false positives) but accepts *both* `:` and `=` and an optional
+`%`, and scopes the scan to the last few lines — so its only miss is a
+separator-less prose forecast, exactly the case forecasting-tools catches. Full
+analysis and the design principle it isolates are in `xtool_three_way.md`.
 
 ### Multiple choice (11 cases) — `xtool_mc_formats.json`, `xtool_mc.md`
 
@@ -64,8 +74,9 @@ reads and mv2 drops; on markdown-bold percentile lines, mv2 reads and
 forecasting-tools drops. (forecasting-tools is not asserted on the one
 fewer-than-three-percentile case; mv2 requires at least three.)
 
-**Across all three types, neither extractor dominates — they fail on different
-families.**
+**On binary, a third tool breaks the symmetry (EskemoMan weakly dominates); on
+multiple-choice and numeric the two original tools still fail on different
+families, so neither dominates.**
 
 ## What a drop or a misread costs in the tournament
 
@@ -102,6 +113,7 @@ models exactly.
 | `reference_extractors.py` | binary reference transcriptions |
 | `mc_extractors.py` | multiple-choice reference transcriptions |
 | `numeric_extractors.py` | numeric/percentile reference transcriptions |
+| `eskemo_extractor.py` | binary reference reimpl. of a third deployed extractor (with `test_eskemo_extractor.py`) |
 | `test_forecast_answer_formats.py` | offline recompute of the binary leg |
 | `test_mc_formats.py` | offline recompute of the MC leg |
 | `test_numeric_formats.py` | offline recompute of the numeric leg |
@@ -110,7 +122,7 @@ models exactly.
 | `drop_cost.py` / `misread_cost.py` / `combined_cost.py` / `numeric_misread_cost.py` | tournament cost models (with `test_*` and `*.md`) |
 | `unify_cost.py` | the single law `k = L_err/mu` the four cost models share (with `test_unify_cost.py`) |
 | `PREPRINT.md` | short write-up deriving the unified cost law |
-| `xtool_robustness.md` / `xtool_mc.md` / `xtool_numeric.md` | per-leg write-ups |
+| `xtool_robustness.md` / `xtool_mc.md` / `xtool_numeric.md` / `xtool_three_way.md` | per-leg write-ups |
 
 ## Reproduce
 
@@ -132,8 +144,10 @@ independent confirmation.
 - Models the text **extractors** only, not downstream distribution construction
   or aggregation.
 - The forecasting-tools columns are **source-grounded reproductions**; mv2's
-  behaviour is additionally confirmed by real sandbox runs. An independent live
-  run of forecasting-tools against the MC corpus is queued.
+  behaviour is additionally confirmed by real sandbox runs. The EskemoMan column
+  is a binary-only reimplementation of a no-license public repo's documented
+  algorithm (no source copied); its numeric/MC legs are future work. An
+  independent live run of forecasting-tools against the MC corpus is queued.
 - The cost models price scenarios (`d`, `m`, `rho`, `z` are inputs, not measured
   frequencies) and assume a non-dominant entrant; each states its limits.
 
