@@ -27,16 +27,21 @@ Tools compared (each used unmodified, through its published extractor only):
   here via an independent reimplementation of its documented regex parsers (that
   repo carries no license; no source is copied). See `xtool_three_way.md`,
   `xtool_numeric_three_way.md` and `xtool_mc_three_way.md`.
+- **Bowen1314/metaculus-bot** (binary leg) — a fourth entrant in the same
+  tournament (MIT; notice in `THIRD_PARTY_NOTICES.md`). Its deterministic binary
+  parser is scored here; when that parser returns nothing, the deployed bot hands
+  the text to an LLM parser, which is not run here. See `xtool_four_way.md`.
 
 ## Results
 
-### Binary (20 cases) — `xtool_answer_formats.json`, `xtool_robustness.md`, `xtool_three_way.md`
+### Binary (20 cases) — `xtool_answer_formats.json`, `xtool_robustness.md`, `xtool_three_way.md`, `xtool_four_way.md`
 
 | extractor | correct | miss | false positive | correct_reject |
 |---|---|---|---|---|
 | mv2-forecaster 0.1.7 | 14 | 2 | 0 | 4 |
 | Metaculus forecasting-tools | 13 | 3 | 2 | 2 |
 | EskemoMan (reimpl., binary) | 15 | 1 | 0 | 4 |
+| Bowen1314 (regex stage) | 12 | 4 | 0 | 4 |
 
 mv2-forecaster is label-gated (`Probability:` …): zero false positives, reads
 answers that drop the `%`, use a bare fraction, or hit a boundary — but drops a
@@ -49,6 +54,17 @@ label gate (0 false positives) but accepts *both* `:` and `=` and an optional
 `%`, and scopes the scan to the last few lines — so its only miss is a
 separator-less prose forecast, exactly the case forecasting-tools catches. Full
 analysis and the design principle it isolates are in `xtool_three_way.md`.
+
+The fourth tool, **Bowen1314**, is forecasting-tools' `%`-required rule behind a
+label gate. It matches forecasting-tools on every case except three: it drops the
+prose forecast and rejects both reasoning-text traps, giving up one read to avoid
+two false positives. EskemoMan weakly dominates it; against mv2 it is a split
+(`=` vs the no-`%` forms). It is also a two-stage design: its 4 misses
+and 4 rejects go to an LLM parser in the deployed bot, so the misses cost an
+extra call rather than a dropped run. Whether that LLM parser reads the traps
+safely is not measured. Verified in a sealed sandbox run that first reproduced
+the published mv2 and forecasting-tools tallies (`xtool_four_way.json`). See
+`xtool_four_way.md`.
 
 ### Multiple choice (11 cases) — `xtool_mc_formats.json`, `xtool_mc.md`, `xtool_mc_three_way.md`
 
@@ -91,9 +107,9 @@ left its numeric path open. See `xtool_numeric_three_way.md`.
 
 **Across all three legs, EskemoMan has the best recall, but only its binary
 path guards against reading reasoning text as the answer. On binary it weakly
-dominates; on multiple-choice it weakly dominates mv2 and splits with
-forecasting-tools; on numeric it commits the base-rate false positive, so no
-tool dominates.**
+dominates all three other tools; on multiple-choice it weakly dominates mv2 and
+splits with forecasting-tools; on numeric it commits the base-rate false
+positive, so no tool dominates.**
 
 ## What a drop or a misread costs in the tournament
 
@@ -127,12 +143,14 @@ models exactly.
 | `xtool_answer_formats.json` | binary + multiple-choice corpus (labeled) |
 | `xtool_mc_formats.json` | multiple-choice cross-tool corpus (labeled) |
 | `xtool_numeric_formats.json` | numeric/percentile cross-tool corpus (labeled) |
+| `xtool_four_way.json` | binary leg, per-case values and classes for all four tools (sandbox-verified) |
 | `reference_extractors.py` | binary reference transcriptions |
 | `mc_extractors.py` | multiple-choice reference transcriptions |
 | `numeric_extractors.py` | numeric/percentile reference transcriptions |
 | `eskemo_extractor.py` | binary reference reimpl. of a third deployed extractor (with `test_eskemo_extractor.py`) |
 | `eskemo_numeric.py` | numeric reference reimpl. of the same third extractor (with `test_eskemo_numeric.py`) |
 | `eskemo_mc.py` | multiple-choice reference reimpl. of the same third extractor (with `test_eskemo_mc.py`) |
+| `bowen_binary.py` | binary parser of a fourth deployed extractor, Bowen1314/metaculus-bot (with `test_bowen_binary.py`) |
 | `test_forecast_answer_formats.py` | offline recompute of the binary leg |
 | `test_mc_formats.py` | offline recompute of the MC leg |
 | `test_numeric_formats.py` | offline recompute of the numeric leg |
@@ -141,7 +159,8 @@ models exactly.
 | `drop_cost.py` / `misread_cost.py` / `combined_cost.py` / `numeric_misread_cost.py` | tournament cost models (with `test_*` and `*.md`) |
 | `unify_cost.py` | the single law `k = L_err/mu` the four cost models share (with `test_unify_cost.py`) |
 | `PREPRINT.md` | short write-up deriving the unified cost law |
-| `xtool_robustness.md` / `xtool_mc.md` / `xtool_numeric.md` / `xtool_three_way.md` / `xtool_numeric_three_way.md` / `xtool_mc_three_way.md` | per-leg write-ups |
+| `xtool_robustness.md` / `xtool_mc.md` / `xtool_numeric.md` / `xtool_three_way.md` / `xtool_numeric_three_way.md` / `xtool_mc_three_way.md` / `xtool_four_way.md` | per-leg write-ups |
+| `THIRD_PARTY_NOTICES.md` | licences of the other projects whose logic is used here |
 
 ## Reproduce
 
@@ -167,10 +186,15 @@ independent confirmation.
   are independent reimplementations of a no-license public repo's documented
   algorithm (no source copied), for all three legs. An independent live run of
   forecasting-tools against the MC corpus is queued.
+- The Bowen1314 column covers its **deterministic binary stage only**. Its
+  LLM fallback was not run, so the deployed bot's end-to-end handling of the
+  cases its regex passes on is unknown.
 - The cost models price scenarios (`d`, `m`, `rho`, `z` are inputs, not measured
   frequencies) and assume a non-dominant entrant; each states its limits.
 
 Corpus data is **CC BY 4.0**; code is **Apache-2.0**. `forecasting-tools` is a
 separate Metaculus project, used unmodified, with full credit to its authors.
+`bowen_binary.py` follows Bowen1314/metaculus-bot (MIT, Copyright (c) 2026
+Bowen Rui); see `THIRD_PARTY_NOTICES.md`.
 
 *This research and write-up were made with AI, by MV2 of Munim, Inc.*
