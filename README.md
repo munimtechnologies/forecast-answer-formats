@@ -22,11 +22,11 @@ Tools compared (each used unmodified, through its published extractor only):
 - **Metaculus forecasting-tools**
   (github.com/Metaculus/forecasting-tools) — a separate project by Metaculus,
   credited as such.
-- **EskemoMan/metaculus-forecast-bot** (binary and numeric legs) — a separate
+- **EskemoMan/metaculus-forecast-bot** (all three legs) — a separate
   open-source hobbyist entrant in the same Fall 2026 FutureEval tournament, scored
   here via an independent reimplementation of its documented regex parsers (that
-  repo carries no license; no source is copied). See `xtool_three_way.md` and
-  `xtool_numeric_three_way.md`.
+  repo carries no license; no source is copied). See `xtool_three_way.md`,
+  `xtool_numeric_three_way.md` and `xtool_mc_three_way.md`.
 
 ## Results
 
@@ -50,18 +50,26 @@ label gate (0 false positives) but accepts *both* `:` and `=` and an optional
 separator-less prose forecast, exactly the case forecasting-tools catches. Full
 analysis and the design principle it isolates are in `xtool_three_way.md`.
 
-### Multiple choice (11 cases) — `xtool_mc_formats.json`, `xtool_mc.md`
+### Multiple choice (11 cases) — `xtool_mc_formats.json`, `xtool_mc.md`, `xtool_mc_three_way.md`
 
 | extractor | correct | miss | false positive | correct_reject |
 |---|---|---|---|---|
 | mv2-forecaster 0.1.7 | 7 | 3 | 0 | 1 |
 | Metaculus forecasting-tools | 6 | 4 | 1 | 0 |
+| EskemoMan (reimpl., MC) | 8 | 2 | 0 | 1 |
 
-Two clean, opposite contrasts: mv2 reads numbered lists and bold-colon-inside
-lines that forecasting-tools drops; forecasting-tools reads a markdown-table
-pipe (`Option A | 30`) that mv2 drops. And a novel MC false positive:
-forecasting-tools reads a labeled *reference frequency table* as a forecast,
-while mv2 rejects it.
+Two clean, opposite contrasts between the first two tools: mv2 reads numbered
+lists and bold-colon-inside lines that forecasting-tools drops; forecasting-tools
+reads a markdown-table pipe (`Option A | 30`) that mv2 drops. And a novel MC
+false positive: forecasting-tools reads a labeled *reference frequency table* as
+a forecast, while mv2 rejects it. The third tool, **EskemoMan**, weakly
+dominates mv2 here: it reads everything mv2 reads plus `Option A = 30%`, which
+no other tool reads. It drops the bare-pipe row (it treats a line as a table row
+only if it *starts* with `|`). It rejects the corpus trap only for that
+syntactic reason: probes show it reads the same declined table written with
+leading pipes, and that when the final answer block is incomplete it silently
+falls back to an *earlier* complete block from the reasoning. See
+`xtool_mc_three_way.md`.
 
 ### Numeric / percentile (8 cases) — `xtool_numeric_formats.json`, `xtool_numeric.md`, `xtool_numeric_three_way.md`
 
@@ -81,10 +89,11 @@ declined base-rate block as a forecast (the same false positive forecasting-tool
 makes). So on numeric **no tool dominates**: the one tool with a binary guard
 left its numeric path open. See `xtool_numeric_three_way.md`.
 
-**On binary, a third tool breaks the symmetry (EskemoMan weakly dominates); on
-numeric that same tool reads every format but, lacking a numeric reasoning-text
-guard, commits the base-rate false positive, so no tool dominates; on
-multiple-choice the two original tools still fail on different families.**
+**Across all three legs, EskemoMan has the best recall, but only its binary
+path guards against reading reasoning text as the answer. On binary it weakly
+dominates; on multiple-choice it weakly dominates mv2 and splits with
+forecasting-tools; on numeric it commits the base-rate false positive, so no
+tool dominates.**
 
 ## What a drop or a misread costs in the tournament
 
@@ -123,6 +132,7 @@ models exactly.
 | `numeric_extractors.py` | numeric/percentile reference transcriptions |
 | `eskemo_extractor.py` | binary reference reimpl. of a third deployed extractor (with `test_eskemo_extractor.py`) |
 | `eskemo_numeric.py` | numeric reference reimpl. of the same third extractor (with `test_eskemo_numeric.py`) |
+| `eskemo_mc.py` | multiple-choice reference reimpl. of the same third extractor (with `test_eskemo_mc.py`) |
 | `test_forecast_answer_formats.py` | offline recompute of the binary leg |
 | `test_mc_formats.py` | offline recompute of the MC leg |
 | `test_numeric_formats.py` | offline recompute of the numeric leg |
@@ -131,7 +141,7 @@ models exactly.
 | `drop_cost.py` / `misread_cost.py` / `combined_cost.py` / `numeric_misread_cost.py` | tournament cost models (with `test_*` and `*.md`) |
 | `unify_cost.py` | the single law `k = L_err/mu` the four cost models share (with `test_unify_cost.py`) |
 | `PREPRINT.md` | short write-up deriving the unified cost law |
-| `xtool_robustness.md` / `xtool_mc.md` / `xtool_numeric.md` / `xtool_three_way.md` / `xtool_numeric_three_way.md` | per-leg write-ups |
+| `xtool_robustness.md` / `xtool_mc.md` / `xtool_numeric.md` / `xtool_three_way.md` / `xtool_numeric_three_way.md` / `xtool_mc_three_way.md` | per-leg write-ups |
 
 ## Reproduce
 
@@ -154,10 +164,9 @@ independent confirmation.
   or aggregation.
 - The forecasting-tools columns are **source-grounded reproductions**; mv2's
   behaviour is additionally confirmed by real sandbox runs. The EskemoMan columns
-  are binary- and numeric-leg reimplementations of a no-license public repo's
-  documented algorithm (no source copied); its multiple-choice leg is future
-  work. An independent live run of forecasting-tools against the MC corpus is
-  queued.
+  are independent reimplementations of a no-license public repo's documented
+  algorithm (no source copied), for all three legs. An independent live run of
+  forecasting-tools against the MC corpus is queued.
 - The cost models price scenarios (`d`, `m`, `rho`, `z` are inputs, not measured
   frequencies) and assume a non-dominant entrant; each states its limits.
 
