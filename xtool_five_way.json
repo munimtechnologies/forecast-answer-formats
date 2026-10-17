@@ -1,0 +1,59 @@
+{
+  "name": "forecast-answer-formats-binary-five-way",
+  "version": "0.13.0",
+  "license": "CC BY 4.0",
+  "made_with": "AI, by MV2 of Munim, Inc. (research field)",
+  "generated": "2026-10-17",
+  "provenance": "Sealed sandbox job upstream-parity-v2 (python:3.12, 2026-10-16): downloaded the live xtool_answer_formats.json, reference_extractors.py and eskemo_extractor.py from this repo's main branch and the upstream bot/parsing.py of Bowen1314/metaculus-bot and Torrin44/forecast-bot, imported them unmodified alongside bowen_binary.py and torrin_binary.py, and scored all five on the 20 binary cases. Gate A: the mv2 and forecasting_tools tallies had to reproduce the published 14/2/0/0/4 and 13/3/0/2/2 (PASS). Gate B: on all 20 corpus texts and 12 probe texts, the bowen and torrin ports had to return exactly what the upstream functions return, ParseError mapped to None (PASS, 0 mismatches over 32 texts each).",
+  "extractors": {
+    "mv2": "mv2-forecaster 0.1.7 (reference_extractors.mv2_binary)",
+    "forecasting_tools": "Metaculus forecasting-tools (reference_extractors.forecasting_tools_binary)",
+    "eskemo": "EskemoMan/metaculus-forecast-bot, independent reimpl. (eskemo_extractor.extract_binary)",
+    "bowen": "Bowen1314/metaculus-bot parse_binary_probability, deterministic stage only (bowen_binary.bowen_binary); upstream defers every None to an LLM parser",
+    "torrin": "Torrin44/forecast-bot parse_binary, deterministic stage only (torrin_binary.torrin_binary); upstream defers every ParseError to a 6,000-char LLM repair parser"
+  },
+  "n_cases": 20,
+  "tally": {
+    "mv2":               {"correct": 14, "miss": 2, "wrong_value": 0, "false_positive": 0, "correct_reject": 4},
+    "forecasting_tools": {"correct": 13, "miss": 3, "wrong_value": 0, "false_positive": 2, "correct_reject": 2},
+    "eskemo":            {"correct": 15, "miss": 1, "wrong_value": 0, "false_positive": 0, "correct_reject": 4},
+    "bowen":             {"correct": 12, "miss": 4, "wrong_value": 0, "false_positive": 0, "correct_reject": 4},
+    "torrin":            {"correct": 13, "miss": 3, "wrong_value": 0, "false_positive": 2, "correct_reject": 2}
+  },
+  "per_case": [
+    {"id": "bin_canonical",      "family": "canonical",             "true_prob": 0.73,  "mv2": [0.73, "correct"],  "forecasting_tools": [0.73, "correct"],  "eskemo": [0.73, "correct"],  "bowen": [0.73, "correct"],  "torrin": [0.73, "correct"]},
+    {"id": "bin_decimal_pct",    "family": "decimal percent",       "true_prob": 0.735, "mv2": [0.735, "correct"], "forecasting_tools": [0.735, "correct"], "eskemo": [0.735, "correct"], "bowen": [0.735, "correct"], "torrin": [0.735, "correct"]},
+    {"id": "bin_dropped_pct",    "family": "dropped % sign",        "true_prob": 0.73,  "mv2": [0.73, "correct"],  "forecasting_tools": [null, "miss"],     "eskemo": [0.73, "correct"],  "bowen": [null, "miss"],     "torrin": [null, "miss"]},
+    {"id": "bin_bare_fraction",  "family": "bare fraction",         "true_prob": 0.73,  "mv2": [0.73, "correct"],  "forecasting_tools": [null, "miss"],     "eskemo": [0.73, "correct"],  "bowen": [null, "miss"],     "torrin": [null, "miss"]},
+    {"id": "bin_no_space",       "family": "no space",              "true_prob": 0.73,  "mv2": [0.73, "correct"],  "forecasting_tools": [0.73, "correct"],  "eskemo": [0.73, "correct"],  "bowen": [0.73, "correct"],  "torrin": [0.73, "correct"]},
+    {"id": "bin_line_bold",      "family": "whole line bold",       "true_prob": 0.73,  "mv2": [0.73, "correct"],  "forecasting_tools": [0.73, "correct"],  "eskemo": [0.73, "correct"],  "bowen": [0.73, "correct"],  "torrin": [0.73, "correct"]},
+    {"id": "bin_bold_colon_in",  "family": "bold, colon inside",    "true_prob": 0.73,  "mv2": [0.73, "correct"],  "forecasting_tools": [0.73, "correct"],  "eskemo": [0.73, "correct"],  "bowen": [0.73, "correct"],  "torrin": [0.73, "correct"]},
+    {"id": "bin_bold_number",    "family": "number bolded",         "true_prob": 0.73,  "mv2": [0.73, "correct"],  "forecasting_tools": [0.73, "correct"],  "eskemo": [0.73, "correct"],  "bowen": [0.73, "correct"],  "torrin": [0.73, "correct"]},
+    {"id": "bin_italic",         "family": "italic",                "true_prob": 0.73,  "mv2": [0.73, "correct"],  "forecasting_tools": [0.73, "correct"],  "eskemo": [0.73, "correct"],  "bowen": [0.73, "correct"],  "torrin": [0.73, "correct"]},
+    {"id": "bin_lowercase",      "family": "lowercase",             "true_prob": 0.73,  "mv2": [0.73, "correct"],  "forecasting_tools": [0.73, "correct"],  "eskemo": [0.73, "correct"],  "bowen": [0.73, "correct"],  "torrin": [0.73, "correct"]},
+    {"id": "bin_numbered",       "family": "numbered line",         "true_prob": 0.73,  "mv2": [0.73, "correct"],  "forecasting_tools": [0.73, "correct"],  "eskemo": [0.73, "correct"],  "bowen": [0.73, "correct"],  "torrin": [0.73, "correct"]},
+    {"id": "bin_boundary_0",     "family": "boundary 0%",           "true_prob": 0.0,   "mv2": [0.0, "correct"],   "forecasting_tools": [0.0, "correct"],   "eskemo": [0.0, "correct"],   "bowen": [0.0, "correct"],   "torrin": [0.0, "correct"]},
+    {"id": "bin_boundary_100",   "family": "boundary 100 (no %)",   "true_prob": 1.0,   "mv2": [1.0, "correct"],   "forecasting_tools": [null, "miss"],     "eskemo": [1.0, "correct"],   "bowen": [null, "miss"],     "torrin": [null, "miss"]},
+    {"id": "bin_equals",         "family": "equals separator",      "true_prob": 0.73,  "mv2": [null, "miss"],     "forecasting_tools": [0.73, "correct"],  "eskemo": [0.73, "correct"],  "bowen": [0.73, "correct"],  "torrin": [0.73, "correct"]},
+    {"id": "bin_prose_is",       "family": "prose 'is'",            "true_prob": 0.73,  "mv2": [null, "miss"],     "forecasting_tools": [0.73, "correct"],  "eskemo": [null, "miss"],     "bowen": [null, "miss"],     "torrin": [0.73, "correct"]},
+    {"id": "bin_baserate_then",  "family": "base rate then final",  "true_prob": 0.8,   "mv2": [0.8, "correct"],   "forecasting_tools": [0.8, "correct"],   "eskemo": [0.8, "correct"],   "bowen": [0.8, "correct"],   "torrin": [0.8, "correct"]},
+    {"id": "bin_baserate_only",  "family": "base rate only (trap)", "true_prob": null,  "mv2": [null, "correct_reject"], "forecasting_tools": [0.05, "false_positive"], "eskemo": [null, "correct_reject"], "bowen": [null, "correct_reject"], "torrin": [0.05, "false_positive"]},
+    {"id": "bin_two_prose_pcts", "family": "two prose %s (trap)",   "true_prob": null,  "mv2": [null, "correct_reject"], "forecasting_tools": [0.3, "false_positive"],  "eskemo": [null, "correct_reject"], "bowen": [null, "correct_reject"], "torrin": [0.3, "false_positive"]},
+    {"id": "bin_out_of_range",   "family": "out of range",          "true_prob": null,  "mv2": [null, "correct_reject"], "forecasting_tools": [null, "correct_reject"], "eskemo": [null, "correct_reject"], "bowen": [null, "correct_reject"], "torrin": [null, "correct_reject"]},
+    {"id": "bin_no_number",      "family": "no number at all",      "true_prob": null,  "mv2": [null, "correct_reject"], "forecasting_tools": [null, "correct_reject"], "eskemo": [null, "correct_reject"], "bowen": [null, "correct_reject"], "torrin": [null, "correct_reject"]}
+  ],
+  "probes": [
+    {"text": "Probability: 150%",                                   "mv2": null, "forecasting_tools": null, "eskemo": null, "bowen": null, "torrin": null},
+    {"text": "Probability: 100%",                                   "mv2": 1.0,  "forecasting_tools": 1.0,  "eskemo": 1.0,  "bowen": 1.0,  "torrin": 1.0},
+    {"text": "Probability: 1,000%",                                 "mv2": 1.0,  "forecasting_tools": 0.0,  "eskemo": 1.0,  "bowen": null, "torrin": null},
+    {"text": "Probability (final): 73%",                            "mv2": null, "forecasting_tools": 0.73, "eskemo": 0.73, "bowen": null, "torrin": 0.73},
+    {"text": "**Probability**: 73%",                                "mv2": 0.73, "forecasting_tools": 0.73, "eskemo": 0.73, "bowen": 0.73, "torrin": 0.73},
+    {"text": "Probability: 20%\\nOn reflection, revised.\\nProbability: 35%", "mv2": 0.35, "forecasting_tools": 0.35, "eskemo": 0.35, "bowen": 0.35, "torrin": 0.35},
+    {"text": "Initial probability: 40%\\nAfter weighing the evidence I settle on 55%.", "mv2": 0.4, "forecasting_tools": 0.55, "eskemo": 0.4, "bowen": 0.4, "torrin": 0.4},
+    {"text": "Historically about a 5% base rate. <~450 chars of filler>", "mv2": null, "forecasting_tools": 0.05, "eskemo": null, "bowen": null, "torrin": null},
+    {"text": "Final answer 45% <filler to length 314>",             "mv2": null, "forecasting_tools": 0.45, "eskemo": null, "bowen": null, "torrin": 0.05},
+    {"text": "Probability: .5%",                                    "mv2": null, "forecasting_tools": 0.05, "eskemo": null, "bowen": null, "torrin": 0.005},
+    {"text": "Probability: +12%",                                   "mv2": null, "forecasting_tools": 0.12, "eskemo": null, "bowen": null, "torrin": 0.12},
+    {"text": "",                                                    "mv2": null, "forecasting_tools": null, "eskemo": null, "bowen": null, "torrin": null}
+  ]
+}

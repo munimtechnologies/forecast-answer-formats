@@ -31,10 +31,15 @@ Tools compared (each used unmodified, through its published extractor only):
   tournament (MIT; notice in `THIRD_PARTY_NOTICES.md`). Its deterministic binary
   parser is scored here; when that parser returns nothing, the deployed bot hands
   the text to an LLM parser, which is not run here. See `xtool_four_way.md`.
+- **Torrin44/forecast-bot** (binary leg) — a fifth entrant in the same
+  tournament (MIT; notice in `THIRD_PARTY_NOTICES.md`). Its deterministic binary
+  parser is scored here; a `ParseError` defers to a 6,000-char LLM repair parser,
+  not run here. On the corpus it is identical to forecasting-tools; probes show
+  three structural differences. See `xtool_five_way.md`.
 
 ## Results
 
-### Binary (20 cases) — `xtool_answer_formats.json`, `xtool_robustness.md`, `xtool_three_way.md`, `xtool_four_way.md`
+### Binary (20 cases) — `xtool_answer_formats.json`, `xtool_robustness.md`, `xtool_three_way.md`, `xtool_four_way.md`, `xtool_five_way.md`
 
 | extractor | correct | miss | false positive | correct_reject |
 |---|---|---|---|---|
@@ -42,6 +47,7 @@ Tools compared (each used unmodified, through its published extractor only):
 | Metaculus forecasting-tools | 13 | 3 | 2 | 2 |
 | EskemoMan (reimpl., binary) | 15 | 1 | 0 | 4 |
 | Bowen1314 (regex stage) | 12 | 4 | 0 | 4 |
+| Torrin44 (regex stage) | 13 | 3 | 2 | 2 |
 
 mv2-forecaster is label-gated (`Probability:` …): zero false positives, reads
 answers that drop the `%`, use a bare fraction, or hit a boundary — but drops a
@@ -65,6 +71,19 @@ extra call rather than a dropped run. Whether that LLM parser reads the traps
 safely is not measured. Verified in a sealed sandbox run that first reproduced
 the published mv2 and forecasting-tools tallies (`xtool_four_way.json`). See
 `xtool_four_way.md`.
+
+The fifth tool, **Torrin44**, is the sharpest result of the set: its
+deterministic stage is **identical to forecasting-tools on all 20 corpus cases**
+(same 13/3/0/2/2, case by case), yet it is a different parser. Twelve structural
+probes, machine-verified against both upstream sources, show where: Torrin's
+fallback scans only the **last 300 characters** (so a far-away base rate FT reads
+is dropped, but a real trailing answer can be truncated — `Final answer 45%` is
+read as `5%`), and its number grammar matches a leading dot and comma groups
+(`.5%` → 0.005, not FT's 0.05; `1,000%` → rejected, not FT's 0.0). Two
+independently written parsers converge to the same behaviour on well-formed
+answers, false positives included, and diverge only on malformed ones. Verified
+in the same sealed run (Gate A + Gate B, 0 parity mismatches over 32 texts). See
+`xtool_five_way.md`.
 
 ### Multiple choice (11 cases) — `xtool_mc_formats.json`, `xtool_mc.md`, `xtool_mc_three_way.md`
 
@@ -143,7 +162,8 @@ models exactly.
 | `xtool_answer_formats.json` | binary + multiple-choice corpus (labeled) |
 | `xtool_mc_formats.json` | multiple-choice cross-tool corpus (labeled) |
 | `xtool_numeric_formats.json` | numeric/percentile cross-tool corpus (labeled) |
-| `xtool_four_way.json` | binary leg, per-case values and classes for all four tools (sandbox-verified) |
+| `xtool_four_way.json` | binary leg, per-case values and classes for four tools (sandbox-verified) |
+| `xtool_five_way.json` | binary leg, per-case values and classes for all five tools + 12 structural probes (sandbox-verified) |
 | `reference_extractors.py` | binary reference transcriptions |
 | `mc_extractors.py` | multiple-choice reference transcriptions |
 | `numeric_extractors.py` | numeric/percentile reference transcriptions |
@@ -151,6 +171,7 @@ models exactly.
 | `eskemo_numeric.py` | numeric reference reimpl. of the same third extractor (with `test_eskemo_numeric.py`) |
 | `eskemo_mc.py` | multiple-choice reference reimpl. of the same third extractor (with `test_eskemo_mc.py`) |
 | `bowen_binary.py` | binary parser of a fourth deployed extractor, Bowen1314/metaculus-bot (with `test_bowen_binary.py`) |
+| `torrin_binary.py` | binary parser of a fifth deployed extractor, Torrin44/forecast-bot (with `test_torrin_binary.py`) |
 | `test_forecast_answer_formats.py` | offline recompute of the binary leg |
 | `test_mc_formats.py` | offline recompute of the MC leg |
 | `test_numeric_formats.py` | offline recompute of the numeric leg |
@@ -159,7 +180,7 @@ models exactly.
 | `drop_cost.py` / `misread_cost.py` / `combined_cost.py` / `numeric_misread_cost.py` | tournament cost models (with `test_*` and `*.md`) |
 | `unify_cost.py` | the single law `k = L_err/mu` the four cost models share (with `test_unify_cost.py`) |
 | `PREPRINT.md` | short write-up deriving the unified cost law |
-| `xtool_robustness.md` / `xtool_mc.md` / `xtool_numeric.md` / `xtool_three_way.md` / `xtool_numeric_three_way.md` / `xtool_mc_three_way.md` / `xtool_four_way.md` | per-leg write-ups |
+| `xtool_robustness.md` / `xtool_mc.md` / `xtool_numeric.md` / `xtool_three_way.md` / `xtool_numeric_three_way.md` / `xtool_mc_three_way.md` / `xtool_four_way.md` / `xtool_five_way.md` | per-leg write-ups |
 | `THIRD_PARTY_NOTICES.md` | licences of the other projects whose logic is used here |
 
 ## Reproduce
@@ -186,15 +207,18 @@ independent confirmation.
   are independent reimplementations of a no-license public repo's documented
   algorithm (no source copied), for all three legs. An independent live run of
   forecasting-tools against the MC corpus is queued.
-- The Bowen1314 column covers its **deterministic binary stage only**. Its
-  LLM fallback was not run, so the deployed bot's end-to-end handling of the
-  cases its regex passes on is unknown.
+- The Bowen1314 and Torrin44 columns cover their **deterministic binary stage
+  only**. Each ports an upstream `bot/parsing.py` function and is machine-verified
+  byte-for-behaviour equal to it (Gate B, 0 mismatches). Their LLM fallbacks were
+  not run, so the deployed bots' end-to-end handling of the cases their regex
+  passes on is unknown.
 - The cost models price scenarios (`d`, `m`, `rho`, `z` are inputs, not measured
   frequencies) and assume a non-dominant entrant; each states its limits.
 
 Corpus data is **CC BY 4.0**; code is **Apache-2.0**. `forecasting-tools` is a
 separate Metaculus project, used unmodified, with full credit to its authors.
 `bowen_binary.py` follows Bowen1314/metaculus-bot (MIT, Copyright (c) 2026
-Bowen Rui); see `THIRD_PARTY_NOTICES.md`.
+Bowen Rui); `torrin_binary.py` follows Torrin44/forecast-bot (MIT, Copyright (c)
+2026 the forecast-bot authors); see `THIRD_PARTY_NOTICES.md`.
 
 *This research and write-up were made with AI, by MV2 of Munim, Inc.*
